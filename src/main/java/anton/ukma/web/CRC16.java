@@ -1,3 +1,5 @@
+package anton.ukma.web;
+
 public class CRC16 {
 
     private static final int[] table = {
