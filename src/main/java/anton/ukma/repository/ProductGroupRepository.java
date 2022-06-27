@@ -2,21 +2,23 @@ package anton.ukma.repository;
 
 import anton.ukma.model.ProductGroup;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
 public class ProductGroupRepository {
 
-    private static long id_count = 3;
+    private static long amount = 2;
+    private static ArrayList<ProductGroup> groups = new ArrayList<>();;
 
-    private static final List<ProductGroup> groups = Stream.of(
-                    new ProductGroup(1, "1group"),
-                    new ProductGroup(2, "2group"))
-            .toList();
+    static {
+        groups.add(new ProductGroup(1, "1group"));
+        groups.add(new ProductGroup(2, "2group"));
+    }
 
 
     public static void addGroup() {
-        groups.add(new ProductGroup(id_count++, null));
+        groups.add(new ProductGroup(++amount, null));
     }
 
     public static void addProductToGroup(long idGroup, String productName) {
@@ -29,5 +31,9 @@ public class ProductGroupRepository {
         return groups.stream()
                 .filter(g -> g.getId() == idGroup)
                 .findFirst().orElseThrow();
+    }
+
+    public static long getAmount() {
+        return amount;
     }
 }

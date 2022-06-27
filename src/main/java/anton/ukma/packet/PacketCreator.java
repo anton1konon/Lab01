@@ -1,4 +1,4 @@
-package anton.ukma.web;
+package anton.ukma.packet;
 
 import lombok.SneakyThrows;
 
@@ -43,11 +43,9 @@ public class PacketCreator {
         createPacket(str, cType, bUserId);
     }
 
-
     public static SecretKey getKey() {
         return key;
     }
-
 
 
     @SneakyThrows
@@ -55,7 +53,6 @@ public class PacketCreator {
 
         this.cType = cType;
         this.bUserId = bUserId;
-
 
 //        byte[] messageBytes = str.getBytes(StandardCharsets.UTF_8);
 //        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");

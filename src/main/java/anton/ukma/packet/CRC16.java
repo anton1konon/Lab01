@@ -1,4 +1,4 @@
-package anton.ukma.web;
+package anton.ukma.packet;
 
 public class CRC16 {
 

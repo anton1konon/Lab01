@@ -30,12 +30,12 @@ public class ProductRepository {
                 .findFirst().orElseThrow();
     }
 
-    public static void writeOffProducts(long idProduct, int writeOffAmount) {
+    public synchronized static void writeOffProducts(long idProduct, int writeOffAmount) {
         Product product = getProductById(idProduct);
         product.setAmount(product.getAmount() - writeOffAmount);
     }
 
-    public static void writeInProducts(long idProduct, int writeOffAmount) {
+    public synchronized static void writeInProducts(long idProduct, int writeOffAmount) {
         Product product = getProductById(idProduct);
         product.setAmount(product.getAmount() + writeOffAmount);
     }
@@ -47,7 +47,7 @@ public class ProductRepository {
                 .findFirst().orElseThrow();
     }
 
-    public static void setPriceOnProduct(long id, double price) {
+    public synchronized static void setPriceOnProduct(long id, double price) {
         Product product = getProductById(id);
         product.setPrice(price);
     }

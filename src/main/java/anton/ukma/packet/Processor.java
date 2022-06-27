@@ -1,4 +1,4 @@
-package anton.ukma.web;
+package anton.ukma.packet;
 
 import anton.ukma.repository.ProductGroupRepository;
 import anton.ukma.repository.ProductRepository;
@@ -51,7 +51,7 @@ public class Processor {
         jo2.put("amount", amount);
         jo2.put("response", 200);
         String answer = jo2.toString();
-        Sender.sendMessage(answer.getBytes(StandardCharsets.UTF_8));
+//        Sender.sendMessage(answer.getBytes(StandardCharsets.UTF_8));
         return answer;
     }
 
@@ -62,7 +62,7 @@ public class Processor {
         JSONObject jo2 = new JSONObject();
         jo2.put("response", 200);
         String answer = jo2.toString();
-        Sender.sendMessage(answer.getBytes(StandardCharsets.UTF_8));
+//        Sender.sendMessage(answer.getBytes(StandardCharsets.UTF_8));
         return answer;
     }
 
@@ -73,7 +73,7 @@ public class Processor {
         JSONObject jo2 = new JSONObject();
         jo2.put("response", 200);
         String answer = jo2.toString();
-        Sender.sendMessage(answer.getBytes(StandardCharsets.UTF_8));
+//        Sender.sendMessage(answer.getBytes(StandardCharsets.UTF_8));
         return answer;
     }
 
@@ -83,7 +83,7 @@ public class Processor {
         JSONObject jo2 = new JSONObject();
         jo2.put("response", 200);
         String answer = jo2.toString();
-        Sender.sendMessage(answer.getBytes(StandardCharsets.UTF_8));
+//        Sender.sendMessage(answer.getBytes(StandardCharsets.UTF_8));
         return answer;
     }
 
@@ -94,7 +94,7 @@ public class Processor {
         JSONObject jo2 = new JSONObject();
         jo2.put("response", 200);
         String answer = jo2.toString();
-        Sender.sendMessage(answer.getBytes(StandardCharsets.UTF_8));
+//        Sender.sendMessage(answer.getBytes(StandardCharsets.UTF_8));
         return answer;
     }
 
@@ -105,7 +105,7 @@ public class Processor {
         JSONObject jo2 = new JSONObject();
         jo2.put("response", 200);
         String answer = jo2.toString();
-        Sender.sendMessage(answer.getBytes(StandardCharsets.UTF_8));
+//        Sender.sendMessage(answer.getBytes(StandardCharsets.UTF_8));
         return answer;
     }
 

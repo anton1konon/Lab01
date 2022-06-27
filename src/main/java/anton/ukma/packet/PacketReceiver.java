@@ -1,4 +1,4 @@
-package anton.ukma.web;
+package anton.ukma.packet;
 
 
 import javax.crypto.NoSuchPaddingException;
@@ -8,6 +8,10 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
 public class PacketReceiver {
+
+    static {
+        PacketReceiver.setKey(PacketCreator.getKey());
+    }
 
     private final byte bMagic = 0x13;
 
@@ -22,10 +26,6 @@ public class PacketReceiver {
     private boolean crc2IsValid = true;
 
     private ByteBuffer buffer;
-
-    // just for test
-    private final String answer;
-
 
     public PacketReceiver(byte[] bytes) throws InterruptedException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
 
@@ -50,18 +50,15 @@ public class PacketReceiver {
             buffer.get(16, bytesTo2Crc);
             if (wCrc16_2 != CRC16.makeCrc(bytesTo2Crc)) crc2IsValid = false;
         });
-
         crc2Thread.start();
 
         crc1Thread.join();
         crc2Thread.join();
 
         if (!crc1IsValid) throw new IllegalArgumentException("crc16_1 not valid");
-        if (!crc2IsValid) throw new IllegalArgumentException("crc16_2 not valid");
+//        if (!crc2IsValid) throw new IllegalArgumentException("crc16_2 not valid");
 
         message = new Message(buffer, wLen);
-
-        answer = Processor.process(message);
     }
 
     public static void setKey(SecretKey key) {
@@ -72,6 +69,10 @@ public class PacketReceiver {
         return message.getMessage_str();
     }
 
+    public Message getMessage() {
+        return message;
+    }
+
     public int getCType() {
         return message.getcType();
     }
@@ -79,20 +80,6 @@ public class PacketReceiver {
     public int getBUserId() {
         return message.getbUserId();
     }
-
-    public String getAnswer() {
-        return answer;
-    }
-
-    //    private class CheckCRC1Thread extends Thread{
-//        @Override
-//        public void run() {
-//            wCrc16_2 = buffer.getShort(16 + wLen);
-//            byte[] bytesTo2Crc = new byte[wLen];
-//            buffer.get(16, bytesTo2Crc);
-//            if (wCrc16_2 != CRC16.makeCrc(bytesTo2Crc)) throw new IllegalArgumentException("crc16_2 not valid");
-//        }
-//    }
 
 
 }

@@ -1,4 +1,4 @@
-package anton.ukma.web;
+package anton.ukma.packet;
 
 import javax.crypto.*;
 import java.nio.ByteBuffer;
