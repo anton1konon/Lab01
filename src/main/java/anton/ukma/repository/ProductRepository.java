@@ -8,11 +8,11 @@ import java.util.stream.Stream;
 public class ProductRepository {
 
     private static List<Product> products = Stream.of(
-                    new Product(1, "product1", 25.12, 5, null),
-                    new Product(2, "product2", 12.11, 5, null),
-                    new Product(3, "product3", 10.99, 6, null),
-                    new Product(4, "product4", 5.21, 7, null),
-                    new Product(5, "product5", 3.12, 20, null))
+                    new Product(1, "product1", 25.12, 5, 1),
+                    new Product(2, "product2", 12.11, 5, 1),
+                    new Product(3, "product3", 10.99, 6, 1),
+                    new Product(4, "product4", 5.21, 7, 2),
+                    new Product(5, "product5", 3.12, 20,2))
             .toList();
 
 

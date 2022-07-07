@@ -12,6 +12,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
 
 public class StoreServerUDP extends Thread {
 
@@ -46,7 +47,7 @@ public class StoreServerUDP extends Thread {
             socket.close();
 
         } catch (IOException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException |
-                 InterruptedException e) {
+                 InterruptedException | SQLException e) {
             throw new RuntimeException(e);
         }
     }

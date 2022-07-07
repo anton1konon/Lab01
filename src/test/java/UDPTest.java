@@ -1,20 +1,37 @@
-import anton.ukma.tcp.StoreClientTCP;
+import anton.ukma.repository.DaoService;
+import anton.ukma.tcp.StoreServerTCP;
 import anton.ukma.udp.StoreClientUDP;
 import anton.ukma.udp.StoreServerUDP;
 import org.json.JSONObject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.net.SocketException;
+import java.sql.SQLException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 public class UDPTest {
 
-    @Before
-    public void setup() throws IOException {
+    private static DaoService daoService;
+
+    @BeforeAll
+    public static void setup() throws SQLException, SocketException {
         new StoreServerUDP().start();
+        DaoService.initialization("ProjectDB");
+        daoService = new DaoService();
+        daoService.createGroup("group1");
+        daoService.createGroup("group2");
+        daoService.createProduct("product1", 25.12, 5, 1);
+        daoService.createProduct("product2", 12.11, 5, 2);
+        daoService.createProduct("product3", 10.99, 6, 2);
+        daoService.createProduct("product4", 5.21, 7, 1);
+        daoService.createProduct("product5", 3.12, 20, 2);
     }
 
     @Test
@@ -76,8 +93,8 @@ public class UDPTest {
 
     }
 
-//    @After
-//    public void tearDown() throws IOException {
-//        client.sendEcho("end");
-//    }
+    @AfterAll
+    public static void drop() throws SQLException {
+        daoService.dropAllTables();
+    }
 }

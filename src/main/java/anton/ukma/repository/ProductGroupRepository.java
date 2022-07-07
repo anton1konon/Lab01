@@ -22,9 +22,9 @@ public class ProductGroupRepository {
     }
 
     public static void addProductToGroup(long idGroup, String productName) {
-        ProductRepository
-                .getProductByName(productName)
-                .setProductGroup(getGroupById(idGroup));
+//        ProductRepository
+//                .getProductByName(productName)
+//                .setProductGroup(getGroupById(idGroup));
     }
 
     public static ProductGroup getGroupById(long idGroup) {
