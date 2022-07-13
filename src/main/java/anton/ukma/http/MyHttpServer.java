@@ -9,13 +9,10 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +26,7 @@ public class MyHttpServer extends Thread {
         HttpServer server = HttpServer.create();
         server.bind(new InetSocketAddress(8765), 0);
 
-        HttpContext context = server.createContext("/api", new EchoHandler());
+        HttpContext context = server.createContext("/", new EchoHandler());
         HttpContext contextLogin = server.createContext("/login", new EchoHandler());
 
         context.setAuthenticator(new Auth());
@@ -42,10 +39,20 @@ public class MyHttpServer extends Thread {
     static class EchoHandler implements HttpHandler {
         private final List<EndpointHandler> handlers = List.of(
                 new EndpointHandler("/api/product/?", "GET", this::processGetAll),
+                new EndpointHandler("/product/?", "GET", this::GetAll),
+
                 new EndpointHandler("/api/product/?", "PUT", this::processCreateProduct),
+                new EndpointHandler("/product/?", "PUT", this::processCreateProduct),
+
                 new EndpointHandler("/api/product/(\\d+)", "GET", this::processGetById),
+                new EndpointHandler("/product/(\\d+)", "GET", this::processGetById),
+
                 new EndpointHandler("/api/product/(\\d+)", "POST", this::processUpdateProduct),
+                new EndpointHandler("/product/(\\d+)", "POST", this::processUpdateProduct),
+
                 new EndpointHandler("/api/product/(\\d+)", "DELETE", this::processDeleteProduct),
+                new EndpointHandler("/product/(\\d+)", "DELETE", this::processDeleteProduct),
+
                 new EndpointHandler("/login", "POST", this::processLogin)
         );
 
@@ -87,6 +94,10 @@ public class MyHttpServer extends Thread {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
+        }
+
+        private void GetAll(HttpExchange exchange) {
 
         }
 
