@@ -17,6 +17,7 @@ public class DaoServiceTest {
     @BeforeAll
     public static void deleteDataFromTables() throws SQLException {
         daoService = new DaoService();
+        daoService.dropAllTables();
         DaoService.initialization("ProjectDB");
     }
 
@@ -77,7 +78,7 @@ public class DaoServiceTest {
 
     @AfterAll
     public static void dropTables() throws SQLException {
-        daoService.dropAllTables();
+//        daoService.dropAllTables();
     }
 
 }

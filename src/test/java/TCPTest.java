@@ -23,8 +23,9 @@ public class TCPTest {
     @BeforeAll
     public static void setup() throws SQLException {
         new StoreServerTCP().start();
-        DaoService.initialization("ProjectDB");
         daoService = new DaoService();
+        daoService.dropAllTables();
+        DaoService.initialization("ProjectDB");
         daoService.createGroup("group1");
         daoService.createGroup("group2");
         daoService.createProduct("product1", 25.12, 5, 1);

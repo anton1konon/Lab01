@@ -15,4 +15,10 @@ public class Product {
     private int amount;
     private int productGroupId;
 
+    public Product(String name, double price, int amount, int productGroupId) {
+        this.name = name;
+        this.price = price;
+        this.amount = amount;
+        this.productGroupId = productGroupId;
+    }
 }

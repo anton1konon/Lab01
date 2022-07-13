@@ -40,7 +40,93 @@ public class DaoService {
         }
     }
 
-    public void createProduct(String name, double price, int amount, int groupId) throws SQLException {
+    public Product findProductById(int id) {
+        try {
+            PreparedStatement st =
+                    con.prepareStatement("select * from Product WHERE id=?");
+            st.setInt(1, id);
+            ResultSet rs = st.executeQuery();
+            rs.next();
+            Product product = new Product(rs.getInt("id"),
+                    rs.getString("name"), rs.getDouble("price"),
+                    rs.getInt("amount"), rs.getInt("groupId"));
+            return product;
+        } catch (SQLException e) {
+            System.out.println("wrong sql");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public Product findProductByName(String name) {
+        try {
+            PreparedStatement st =
+                    con.prepareStatement("select * from Product WHERE name=?");
+            st.setString(1, name);
+            ResultSet rs = st.executeQuery();
+            rs.next();
+            Product product = new Product(rs.getInt("id"),
+                    rs.getString("name"), rs.getDouble("price"),
+                    rs.getInt("amount"), rs.getInt("groupId"));
+            return product;
+        } catch (SQLException e) {
+            System.out.println("wrong sql");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public List<Product> findAllProducts() {
+        try {
+            LinkedList<Product> products = new LinkedList<>();
+            Statement st =
+                    con.createStatement();
+            ResultSet rs = st.executeQuery("select * from Product");
+            while (rs.next()) {
+                Product product = new Product(rs.getInt("id"),
+                        rs.getString("name"), rs.getDouble("price"),
+                        rs.getInt("amount"), rs.getInt("groupId"));
+                products.add(product);
+            }
+            st.close();
+            rs.close();
+            return products;
+        } catch (SQLException e) {
+            System.out.println("Не вірний SQL запит");
+            throw new RuntimeException(e);
+        }
+    }
+
+    public int updateProduct(Product product) throws SQLException {
+        PreparedStatement st =
+                con.prepareStatement("UPDATE Product set name=?, price=?, amount=?, groupId=? where id=?");
+        st.setString(1, product.getName());
+        st.setDouble(2, product.getPrice());
+        st.setInt(3, product.getAmount());
+        st.setInt(4, product.getProductGroupId());
+        st.setInt(5, product.getId());
+        final boolean oldAutoCommit = st.getConnection().getAutoCommit();
+        st.getConnection().setAutoCommit(false);
+        int ans = 0;
+        try {
+            ans = st.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Не вірний SQL запит або транзакція не була закінчена");
+            e.printStackTrace();
+            st.getConnection().rollback();
+        } finally {
+            st.getConnection().commit();
+            st.getConnection().setAutoCommit(oldAutoCommit);
+            st.close();
+        }
+        return ans;
+    }
+
+    public int createProduct(Product product) throws SQLException {
+        return createProduct(product.getName(), product.getPrice(), product.getAmount(), product.getProductGroupId());
+    }
+
+    public int createProduct(String name, double price, int amount, int groupId) throws SQLException {
         PreparedStatement st = con.prepareStatement("INSERT INTO Product(name, price, amount, groupId) VALUES (?, ?, ?, ?)");
         st.setString(1, name);
         st.setDouble(2, price);
@@ -49,8 +135,9 @@ public class DaoService {
 
         final boolean oldAutoCommit = st.getConnection().getAutoCommit();
         st.getConnection().setAutoCommit(false);
+        int ans = 0;
         try {
-            st.executeUpdate();
+            ans = st.executeUpdate();
         } catch (SQLException e) {
             System.out.println("Не вірний SQL запит або транзакція не була закінчена");
             e.printStackTrace();
@@ -60,16 +147,18 @@ public class DaoService {
             st.getConnection().setAutoCommit(oldAutoCommit);
             st.close();
         }
+        return ans;
     }
 
-    public void createGroup(String name) throws SQLException {
+    public int createGroup(String name) throws SQLException {
         PreparedStatement st =
                 con.prepareStatement("INSERT INTO ProductGroup(name) VALUES (?)");
         st.setString(1, name);
         final boolean oldAutoCommit = st.getConnection().getAutoCommit();
         st.getConnection().setAutoCommit(false);
+        int ans = 0;
         try {
-            st.executeUpdate();
+            ans = st.executeUpdate();
         } catch (SQLException e) {
             System.out.println("Не вірний SQL запит або транзакція не була закінчена");
             e.printStackTrace();
@@ -79,6 +168,7 @@ public class DaoService {
             st.getConnection().setAutoCommit(oldAutoCommit);
             st.close();
         }
+        return ans;
     }
 
     public int getProductIdByName(String name) {
@@ -331,14 +421,15 @@ public class DaoService {
         }
     }
 
-    public void deleteProduct(String name) throws SQLException {
+    public int deleteProduct(String name) throws SQLException {
         PreparedStatement st =
                 con.prepareStatement("DELETE from Product where name=?");
         st.setString(1, name);
         final boolean oldAutoCommit = st.getConnection().getAutoCommit();
         st.getConnection().setAutoCommit(false);
+        int ans = 0;
         try {
-            st.executeUpdate();
+            ans = st.executeUpdate();
         } catch (SQLException e) {
             System.out.println("Не вірний SQL запит або транзакція не була закінчена");
             e.printStackTrace();
@@ -348,16 +439,18 @@ public class DaoService {
             st.getConnection().setAutoCommit(oldAutoCommit);
             st.close();
         }
+        return ans;
     }
 
-    public void deleteProduct(int id) throws SQLException {
+    public int deleteProduct(int id) throws SQLException {
         PreparedStatement st =
                 con.prepareStatement("DELETE from Product where id=?");
         st.setInt(1, id);
         final boolean oldAutoCommit = st.getConnection().getAutoCommit();
         st.getConnection().setAutoCommit(false);
+        int ans = 0;
         try {
-            st.executeUpdate();
+            ans = st.executeUpdate();
         } catch (SQLException e) {
             System.out.println("Не вірний SQL запит або транзакція не була закінчена");
             e.printStackTrace();
@@ -367,6 +460,7 @@ public class DaoService {
             st.getConnection().setAutoCommit(oldAutoCommit);
             st.close();
         }
+        return ans;
     }
 
     public void deleteGroup(String name) throws SQLException {
@@ -611,5 +705,7 @@ public class DaoService {
             st.close();
         }
     }
+
+
 
 }

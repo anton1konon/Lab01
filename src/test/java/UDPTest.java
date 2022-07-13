@@ -1,11 +1,9 @@
 import anton.ukma.repository.DaoService;
-import anton.ukma.tcp.StoreServerTCP;
 import anton.ukma.udp.StoreClientUDP;
 import anton.ukma.udp.StoreServerUDP;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -23,8 +21,9 @@ public class UDPTest {
     @BeforeAll
     public static void setup() throws SQLException, SocketException {
         new StoreServerUDP().start();
-        DaoService.initialization("ProjectDB");
         daoService = new DaoService();
+        daoService.dropAllTables();
+        DaoService.initialization("ProjectDB");
         daoService.createGroup("group1");
         daoService.createGroup("group2");
         daoService.createProduct("product1", 25.12, 5, 1);
