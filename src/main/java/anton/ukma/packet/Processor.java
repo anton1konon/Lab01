@@ -1,13 +1,10 @@
 package anton.ukma.packet;
 
 import anton.ukma.repository.DaoService;
-import anton.ukma.repository.ProductGroupRepository;
-import anton.ukma.repository.ProductRepository;
 import lombok.NoArgsConstructor;
 import org.json.Cookie;
 import org.json.JSONObject;
 
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 
 @NoArgsConstructor

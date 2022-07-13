@@ -21,9 +21,10 @@ public class UDPTest {
     @BeforeAll
     public static void setup() throws SQLException, SocketException {
         new StoreServerUDP().start();
+        DaoService.initialization();
         daoService = new DaoService();
         daoService.dropAllTables();
-        DaoService.initialization("ProjectDB");
+        DaoService.initialization();
         daoService.createGroup("group1");
         daoService.createGroup("group2");
         daoService.createProduct("product1", 25.12, 5, 1);
@@ -94,6 +95,6 @@ public class UDPTest {
 
     @AfterAll
     public static void drop() throws SQLException {
-        daoService.dropAllTables();
+//        daoService.dropAllTables();
     }
 }

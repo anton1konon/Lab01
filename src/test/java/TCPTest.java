@@ -1,12 +1,9 @@
 import anton.ukma.repository.DaoService;
-import anton.ukma.repository.ProductGroupRepository;
-import anton.ukma.repository.ProductRepository;
 import anton.ukma.tcp.StoreClientTCP;
 import anton.ukma.tcp.StoreServerTCP;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -23,9 +20,10 @@ public class TCPTest {
     @BeforeAll
     public static void setup() throws SQLException {
         new StoreServerTCP().start();
+        DaoService.initialization();
         daoService = new DaoService();
         daoService.dropAllTables();
-        DaoService.initialization("ProjectDB");
+        DaoService.initialization();
         daoService.createGroup("group1");
         daoService.createGroup("group2");
         daoService.createProduct("product1", 25.12, 5, 1);
@@ -116,7 +114,7 @@ public class TCPTest {
 
     @AfterAll
     public static void drop() throws SQLException {
-        daoService.dropAllTables();
+//        daoService.dropAllTables();
     }
 
 

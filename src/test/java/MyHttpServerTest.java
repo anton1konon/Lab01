@@ -1,5 +1,4 @@
 import anton.ukma.http.MyHttpServer;
-import anton.ukma.http.User;
 import anton.ukma.model.Product;
 import anton.ukma.repository.DaoService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -11,8 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -28,12 +26,16 @@ class MyHttpServerTest {
 
     private static String token;
 
+    private static HttpClient client;
+
     @BeforeAll
     public static void init() throws IOException, SQLException {
         MyHttpServer httpServer = new MyHttpServer();
+        client = HttpClient.newHttpClient();
+        DaoService.initialization();
         daoService = new DaoService();
         daoService.dropAllTables();
-        DaoService.initialization("ProjectDB");
+        DaoService.initialization();
         daoService.createGroup("testGroup1");
         daoService.createGroup("testGroup2");
         daoService.createProduct("test1", 25.21, 5, 2);
@@ -46,12 +48,11 @@ class MyHttpServerTest {
     @Test
     @Order(1)
     public void testLogin() throws URISyntaxException, IOException, InterruptedException {
-        HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("http://localhost:8765/login"))
                 .POST(HttpRequest.BodyPublishers.ofByteArray(OBJECT_MAPPER.writeValueAsBytes(Map.of(
                         "login", "user",
-                        "password", "pass"))))
+                        "password", "user"))))
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         JsonNode jsonNode = OBJECT_MAPPER.readTree(response.body());
@@ -63,7 +64,6 @@ class MyHttpServerTest {
     @Test
     @Order(2)
     public void testGettingAllProducts() throws URISyntaxException, IOException, InterruptedException {
-        HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("http://localhost:8765/api/product"))
                 .headers("token", token)
@@ -83,7 +83,6 @@ class MyHttpServerTest {
     @Test
     @Order(3)
     public void testGettingOneProduct() throws URISyntaxException, IOException, InterruptedException {
-        HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("http://localhost:8765/api/product/1"))
                 .GET()
@@ -98,7 +97,6 @@ class MyHttpServerTest {
     @Test
     @Order(4)
     public void testGettingOneProductWithWrongID() throws URISyntaxException, IOException, InterruptedException {
-        HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("http://localhost:8765/api/product/99"))
                 .headers("token", token)
@@ -114,7 +112,6 @@ class MyHttpServerTest {
     @Test
     @Order(5)
     public void testCreatingOneProduct() throws URISyntaxException, IOException, InterruptedException {
-        HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("http://localhost:8765/api/product/"))
                 .headers("token", token)
@@ -135,7 +132,6 @@ class MyHttpServerTest {
     public void testDeletingOneProduct() throws URISyntaxException, IOException, InterruptedException {
         assertNotNull(daoService.findProductById(6));
 
-        HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("http://localhost:8765/api/product/6"))
                 .headers("token", token)
@@ -152,7 +148,6 @@ class MyHttpServerTest {
     public void testUpdatingOneProduct() throws URISyntaxException, IOException, InterruptedException {
         assertNotEquals(daoService.findProductById(1).getName(), "newTest1");
 
-        HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("http://localhost:8765/api/product/1"))
                 .headers("token", token)

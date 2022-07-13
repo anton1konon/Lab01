@@ -9,10 +9,13 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +77,17 @@ public class MyHttpServer extends Thread {
                 User user = OBJECT_MAPPER.readValue(stream, User.class);
                 String login = user.getLogin();
                 String password = user.getPassword();
-                if (login.equals("user") && password.equals("pass")) {
+                String passHash = "";
+                try {
+                    MessageDigest md = MessageDigest.getInstance("MD5");
+                    md.update(password.getBytes());
+                    byte[] digest = md.digest();
+                    passHash = DatatypeConverter
+                            .printHexBinary(digest).toLowerCase();
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
+                }
+                if (daoService.userIsValid(login, passHash)) {
                     String jwt = JWT.createJWT(login);
                     byte[] data = OBJECT_MAPPER.writeValueAsBytes(Map.of("token", jwt));
                     writeData(data, 200, exchange);

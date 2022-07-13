@@ -1,5 +1,6 @@
 package anton.ukma.repository;
 
+import anton.ukma.http.User;
 import anton.ukma.model.Product;
 
 import java.sql.*;
@@ -7,17 +8,19 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class DaoService {
+    private static final Connection con;
 
     static {
-        initialization("ProjectDB");
+        try {
+            con = DriverManager.getConnection("jdbc:sqlite:" + "ProjectDB");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        initialization();
     }
 
-    private static Connection con;
-
-    public static void initialization(String name) {
+    public static void initialization() {
         try {
-            Class.forName("org.sqlite.JDBC");
-            con = DriverManager.getConnection("jdbc:sqlite:" + name);
             PreparedStatement st1 = con.prepareStatement("create table if not exists 'ProductGroup' (" +
                     "'id' INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     "'name' text, UNIQUE(name))");
@@ -28,15 +31,45 @@ public class DaoService {
                     "'amount' integer," +
                     "'groupId' integer," +
                     "foreign key (groupId) references ProductGroup(id) on update cascade on delete no action)");
+            PreparedStatement st3 = con.prepareStatement("create table if not exists 'User' (" +
+                    "'login' text PRIMARY KEY," +
+                    "'password' text)");
             st1.executeUpdate();
             st2.executeUpdate();
-        } catch (ClassNotFoundException e) {
-            System.out.println("Не знайшли драйвер JDBC");
-            e.printStackTrace();
-            System.exit(0);
+            st3.executeUpdate();
         } catch (SQLException e) {
             System.out.println("Не вірний SQL запит");
             e.printStackTrace();
+        }
+    }
+
+    public boolean userExists(String login) {
+        try {
+            PreparedStatement st =
+                    con.prepareStatement("select * from User WHERE login=?");
+            st.setString(1, login);
+            ResultSet rs = st.executeQuery();
+            return true;
+        } catch (SQLException e) {
+            System.out.println("wrong user");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean userIsValid(String login, String password) {
+        try {
+            PreparedStatement st =
+                    con.prepareStatement("select * from User WHERE login=?");
+            st.setString(1, login);
+            ResultSet rs = st.executeQuery();
+            rs.next();
+            User user = new User(rs.getString("login"), rs.getString("password"));
+            return user.getPassword().equals(password);
+        } catch (SQLException e) {
+            System.out.println("wrong user");
+            e.printStackTrace();
+            return false;
         }
     }
 
