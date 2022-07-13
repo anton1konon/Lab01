@@ -119,9 +119,7 @@ class MyHttpServerTest {
                         "test_test", 25.25, 5, 1)
                 )))
                 .build();
-        System.out.println("before response");
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        System.out.println("after response");
 
         assertEquals(201, response.statusCode());
         assertEquals(5, daoService.getAmountOfProduct("test_test"));

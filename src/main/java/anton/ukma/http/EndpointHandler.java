@@ -15,7 +15,6 @@ public class EndpointHandler {
     }
 
     public boolean isMatch(HttpExchange exchange) {
-        System.out.println(this.httpMethod + "  " + this.pathPatter);
         if (!exchange.getRequestMethod().equals(httpMethod)) return false;
         return exchange.getRequestURI().getPath().matches(pathPatter);
     }

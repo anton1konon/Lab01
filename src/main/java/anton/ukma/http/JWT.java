@@ -11,7 +11,6 @@ public class JWT {
     private static final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
     public static String createJWT(String username) {
-        System.out.println("in jwt");
         String ans = Jwts.builder()
                 .setSubject(username)
                 .signWith(key)

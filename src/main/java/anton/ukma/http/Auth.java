@@ -10,7 +10,6 @@ public class Auth extends Authenticator {
     private DaoService daoService = new DaoService();
     @Override
     public Result authenticate(HttpExchange httpExchange) {
-        System.out.println("in auth");
         String jwt =  httpExchange.getRequestHeaders().getFirst("token");
         if (jwt == null) return new Failure(403);
         String login = JWT.extractUsername(jwt);
