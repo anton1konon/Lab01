@@ -76,18 +76,8 @@ public class MyHttpServer extends Thread {
             try {
                 User user = OBJECT_MAPPER.readValue(stream, User.class);
                 String login = user.getLogin();
-                String password = user.getPassword();
-                String passHash = "";
-                try {
-                    MessageDigest md = MessageDigest.getInstance("MD5");
-                    md.update(password.getBytes());
-                    byte[] digest = md.digest();
-                    passHash = DatatypeConverter
-                            .printHexBinary(digest).toLowerCase();
-                } catch (NoSuchAlgorithmException e) {
-                    throw new RuntimeException(e);
-                }
-                if (daoService.userIsValid(login, passHash)) {
+                String passwordHash = user.getPassword();
+                if (daoService.userIsValid(login, passwordHash)) {
                     String jwt = JWT.createJWT(login);
                     byte[] data = OBJECT_MAPPER.writeValueAsBytes(Map.of("token", jwt));
                     writeData(data, 200, exchange);

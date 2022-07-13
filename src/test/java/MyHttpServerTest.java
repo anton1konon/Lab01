@@ -52,7 +52,7 @@ class MyHttpServerTest {
                 .uri(new URI("http://localhost:8765/login"))
                 .POST(HttpRequest.BodyPublishers.ofByteArray(OBJECT_MAPPER.writeValueAsBytes(Map.of(
                         "login", "user",
-                        "password", "user"))))
+                        "password", "ee11cbb19052e40b07aac0ca060c23ee"))))
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         JsonNode jsonNode = OBJECT_MAPPER.readTree(response.body());
