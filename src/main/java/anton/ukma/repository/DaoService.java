@@ -2,6 +2,7 @@ package anton.ukma.repository;
 
 import anton.ukma.http.User;
 import anton.ukma.model.Product;
+import anton.ukma.model.ProductGroup;
 
 import java.sql.*;
 import java.util.LinkedList;
@@ -30,7 +31,8 @@ public class DaoService {
                     "'price' currency," +
                     "'amount' integer," +
                     "'groupId' integer," +
-                    "foreign key (groupId) references ProductGroup(id) on update cascade on delete no action)");
+                    "UNIQUE(name) ," +
+                    "foreign key (groupId) references ProductGroup(id) on update cascade on delete cascade)");
             PreparedStatement st3 = con.prepareStatement("create table if not exists 'User' (" +
                     "'login' text PRIMARY KEY," +
                     "'password' text)");
@@ -515,11 +517,11 @@ public class DaoService {
         }
     }
 
-    public void deleteGroup(int id) throws SQLException {
+    public int deleteGroup(int id) throws SQLException {
         PreparedStatement st =
-                con.prepareStatement("DELETE from ProductGroup where id=?");
+                con.prepareStatement("DELETE from Product where groupId=?");
         st.setInt(1, id);
-        final boolean oldAutoCommit = st.getConnection().getAutoCommit();
+        boolean oldAutoCommit = st.getConnection().getAutoCommit();
         st.getConnection().setAutoCommit(false);
         try {
             st.executeUpdate();
@@ -532,6 +534,24 @@ public class DaoService {
             st.getConnection().setAutoCommit(oldAutoCommit);
             st.close();
         }
+
+        st = con.prepareStatement("DELETE from ProductGroup where id=?");
+        st.setInt(1, id);
+        oldAutoCommit = st.getConnection().getAutoCommit();
+        st.getConnection().setAutoCommit(false);
+        int ans = 0;
+        try {
+            ans = st.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Не вірний SQL запит або транзакція не була закінчена");
+            e.printStackTrace();
+            st.getConnection().rollback();
+        } finally {
+            st.getConnection().commit();
+            st.getConnection().setAutoCommit(oldAutoCommit);
+            st.close();
+        }
+        return ans;
     }
 
     public List<Product> productListWithSorting(String field, String sorting) {
@@ -740,5 +760,61 @@ public class DaoService {
     }
 
 
+    public List<ProductGroup> findAllGroups() {
+        try {
+            LinkedList<ProductGroup> groups = new LinkedList<>();
+            Statement st =
+                    con.createStatement();
+            ResultSet rs = st.executeQuery("select * from ProductGroup");
+            while (rs.next()) {
+                ProductGroup group = new ProductGroup(rs.getInt("id"),
+                        rs.getString("name"));
+                groups.add(group);
+            }
+            st.close();
+            rs.close();
+            return groups;
+        } catch (SQLException e) {
+            System.out.println("Не вірний SQL запит");
+            throw new RuntimeException(e);
+        }
+    }
 
+    public ProductGroup findGroupById(int id) {
+        try {
+            PreparedStatement st =
+                    con.prepareStatement("select * from ProductGroup WHERE id=?");
+            st.setInt(1, id);
+            ResultSet rs = st.executeQuery();
+            rs.next();
+            ProductGroup group = new ProductGroup(rs.getInt("id"), rs.getString("name"));
+            return group;
+        } catch (SQLException e) {
+            System.out.println("wrong sql");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public int updateGroup(ProductGroup group) throws SQLException {
+        PreparedStatement st =
+                con.prepareStatement("UPDATE ProductGroup set name=? where id=?");
+        st.setString(1, group.getName());
+        st.setLong(2, group.getId());
+        final boolean oldAutoCommit = st.getConnection().getAutoCommit();
+        st.getConnection().setAutoCommit(false);
+        int ans = 0;
+        try {
+            ans = st.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Не вірний SQL запит або транзакція не була закінчена");
+            e.printStackTrace();
+            st.getConnection().rollback();
+        } finally {
+            st.getConnection().commit();
+            st.getConnection().setAutoCommit(oldAutoCommit);
+            st.close();
+        }
+        return ans;
+    }
 }

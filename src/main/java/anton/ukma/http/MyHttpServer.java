@@ -1,6 +1,8 @@
 package anton.ukma.http;
 
 import anton.ukma.model.Product;
+import anton.ukma.model.ProductGroup;
+import anton.ukma.packet.PacketReceiver;
 import anton.ukma.repository.DaoService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,19 +10,44 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.templatemode.TemplateMode;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
+import javax.crypto.NoSuchPaddingException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
 public class MyHttpServer extends Thread {
 
+    public static void main(String[] args) throws IOException {
+        new MyHttpServer();
+    }
+
     private static final DaoService daoService = new DaoService();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    private static final TemplateEngine templateEngine;
+
+    static {
+        var resolver = new ClassLoaderTemplateResolver();
+        resolver.setTemplateMode(TemplateMode.HTML);
+        resolver.setCharacterEncoding("UTF-8");
+        resolver.setPrefix("/");
+        resolver.setSuffix(".html");
+
+        templateEngine = new TemplateEngine();
+        templateEngine.setTemplateResolver(resolver);
+    }
+
 
     public MyHttpServer() throws IOException {
         HttpServer server = HttpServer.create();
@@ -38,23 +65,105 @@ public class MyHttpServer extends Thread {
 
     static class EchoHandler implements HttpHandler {
         private final List<EndpointHandler> handlers = List.of(
-                new EndpointHandler("/api/product/?", "GET", this::processGetAll),
-                new EndpointHandler("/product/?", "GET", this::GetAll),
+                new EndpointHandler("/api/product/?", "GET", this::processGetAllProducts),
+//                new EndpointHandler("/product/?", "GET", this::GetAll),
 
                 new EndpointHandler("/api/product/?", "PUT", this::processCreateProduct),
-                new EndpointHandler("/product/?", "PUT", this::processCreateProduct),
 
-                new EndpointHandler("/api/product/(\\d+)", "GET", this::processGetById),
-                new EndpointHandler("/product/(\\d+)", "GET", this::processGetById),
+                new EndpointHandler("/api/product/(\\d+)", "GET", this::processGetProductById),
 
                 new EndpointHandler("/api/product/(\\d+)", "POST", this::processUpdateProduct),
-                new EndpointHandler("/product/(\\d+)", "POST", this::processUpdateProduct),
 
                 new EndpointHandler("/api/product/(\\d+)", "DELETE", this::processDeleteProduct),
-                new EndpointHandler("/product/(\\d+)", "DELETE", this::processDeleteProduct),
 
-                new EndpointHandler("/login", "POST", this::processLogin)
-        );
+                new EndpointHandler("/login", "POST", this::processLogin),
+
+                new EndpointHandler("/api/group/?", "GET", this::processGetAllGroups),
+
+                new EndpointHandler("/api/group/?", "PUT", this::processCreateGroup),
+
+                new EndpointHandler("/api/group/(\\d+)", "GET", this::processGetGroupById),
+
+                new EndpointHandler("/api/group/(\\d+)", "POST", this::processUpdateGroup),
+
+                new EndpointHandler("/api/group/(\\d+)", "DELETE", this::processDeleteGroup)
+
+                );
+
+        private void processDeleteGroup(HttpExchange exchange) {
+            String idStr = exchange.getRequestURI().getPath()
+                    .replace("/api/group/", "")
+                    .replace("/", "");
+            int id = Integer.parseInt(idStr);
+            try {
+                int resp = daoService.deleteGroup(id);
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+                exchange.sendResponseHeaders(resp != 0 ? 204 : 404, 0);
+                exchange.getResponseBody().close();
+            } catch (IOException | SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void processUpdateGroup(HttpExchange exchange) {
+            try {
+                String idStr = exchange.getRequestURI().getPath()
+                        .replace("/api/group/", "")
+                        .replace("/", "");
+                int id = Integer.parseInt(idStr);
+
+//                byte[] body = exchange.getRequestBody().readAllBytes();
+//                PacketReceiver packetReceiver = new PacketReceiver(body);
+
+                ProductGroup group = OBJECT_MAPPER.readValue(exchange.getRequestBody(), ProductGroup.class);
+                group.setId(id);
+                int resp = daoService.updateGroup(group);
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+                exchange.sendResponseHeaders(resp != 0 ? 204 : 404, 0);
+                exchange.getResponseBody().close();
+            } catch (IOException | SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void processGetGroupById(HttpExchange exchange) {
+            String idStr = exchange.getRequestURI().getPath()
+                    .replace("/api/group/", "")
+                    .replace("/", "");
+            int id = Integer.parseInt(idStr);
+            ProductGroup group = daoService.findGroupById(id);
+            if (group == null) {
+                writeData("Product not found".getBytes(), 404, exchange, false);
+            }
+            try {
+                byte[] data = OBJECT_MAPPER.writeValueAsBytes(group);
+                writeData(data, 200, exchange);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void processCreateGroup(HttpExchange exchange) {
+            try {
+                ProductGroup group = OBJECT_MAPPER.readValue(exchange.getRequestBody(), ProductGroup.class);
+                int resp = daoService.createGroup(group.getName());
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+                exchange.sendResponseHeaders(resp != 0 ? 201 : 409, 0);
+                exchange.getResponseBody().close();
+            } catch (IOException | SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void processGetAllGroups(HttpExchange exchange) {
+            List<ProductGroup> products = daoService.findAllGroups();
+            try {
+                byte[] data = OBJECT_MAPPER.writeValueAsBytes(products);
+                writeData(data, 200, exchange);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -97,11 +206,30 @@ public class MyHttpServer extends Thread {
 
         }
 
-        private void GetAll(HttpExchange exchange) {
+//        private void GetAll(HttpExchange exchange) {
+//            String jwt = exchange.getRequestHeaders().getFirst("token");
+//
+//
+//            List<Product> products;
+//            try {
+//                HttpClient client = HttpClient.newHttpClient();
+//                HttpRequest request = HttpRequest.newBuilder()
+//                        .uri(new URI("http://localhost:8765/api/product"))
+//                        //                        .headers("token", jwt)
+//                        .GET()
+//                        .build();
+//                System.out.println("here1");
+//                var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+//                String responseStr = response.body();
+//                System.out.println("here");
+//                products = Arrays.asList(OBJECT_MAPPER.readValue(responseStr, Product[].class));
+//            } catch (InterruptedException | IOException | URISyntaxException e) {
+//                throw new RuntimeException(e);
+//            }
+//            System.out.println(products);
+//        }
 
-        }
-
-        private void processGetAll(HttpExchange exchange) {
+        private void processGetAllProducts(HttpExchange exchange) {
             List<Product> products = daoService.findAllProducts();
             try {
                 byte[] data = OBJECT_MAPPER.writeValueAsBytes(products);
@@ -111,7 +239,7 @@ public class MyHttpServer extends Thread {
             }
         }
 
-        private void processGetById(HttpExchange exchange) {
+        private void processGetProductById(HttpExchange exchange) {
             String idStr = exchange.getRequestURI().getPath()
                     .replace("/api/product/", "")
                     .replace("/", "");

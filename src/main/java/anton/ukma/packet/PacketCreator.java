@@ -50,6 +50,11 @@ public class PacketCreator {
 
     @SneakyThrows
     private void createPacket(String str, int cType, int bUserId) {
+        createPacket(str.getBytes(), cType, bUserId);
+    }
+
+    @SneakyThrows
+    private void createPacket(byte[] messageBytes, int cType, int bUserId) {
 
         this.cType = cType;
         this.bUserId = bUserId;
@@ -59,7 +64,6 @@ public class PacketCreator {
 //        cipher.init(Cipher.ENCRYPT_MODE, key);
 //        byte[] encryptMessage = cipher.doFinal(messageBytes);
 
-        byte[] messageBytes = str.getBytes(StandardCharsets.UTF_8);
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
         cipher.init(Cipher.ENCRYPT_MODE, key);
         encryptMessage = cipher.doFinal(messageBytes);

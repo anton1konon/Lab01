@@ -69,6 +69,10 @@ public class PacketReceiver {
         return message.getMessage_str();
     }
 
+    public byte[] getMessageStrBytes() {
+        return message.getMessage_str().getBytes();
+    }
+
     public Message getMessage() {
         return message;
     }
