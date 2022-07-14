@@ -43,6 +43,10 @@ public class PacketCreator {
         createPacket(str, cType, bUserId);
     }
 
+    public PacketCreator(byte[] message) {
+        createPacket(message, 0, 0);
+    }
+
     public static SecretKey getKey() {
         return key;
     }

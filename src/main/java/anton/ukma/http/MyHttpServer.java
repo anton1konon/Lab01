@@ -2,6 +2,7 @@ package anton.ukma.http;
 
 import anton.ukma.model.Product;
 import anton.ukma.model.ProductGroup;
+import anton.ukma.packet.PacketCreator;
 import anton.ukma.packet.PacketReceiver;
 import anton.ukma.repository.DaoService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,7 +16,6 @@ import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 import javax.crypto.NoSuchPaddingException;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -90,6 +90,22 @@ public class MyHttpServer extends Thread {
 
                 );
 
+        private static byte[] extractMessageFromPackage(InputStream inputStream) {
+            try {
+                byte[] body = inputStream.readAllBytes();
+                PacketReceiver packet = new PacketReceiver(body);
+                return packet.getMessageStrBytes();
+            } catch (IOException | InterruptedException | NoSuchPaddingException | NoSuchAlgorithmException |
+                     InvalidKeyException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private static byte[] writeMessageIntoPacket(byte[] message) {
+            PacketCreator pc = new PacketCreator(message);
+            return pc.getPacketBytes();
+        }
+
         private void processDeleteGroup(HttpExchange exchange) {
             String idStr = exchange.getRequestURI().getPath()
                     .replace("/api/group/", "")
@@ -112,10 +128,10 @@ public class MyHttpServer extends Thread {
                         .replace("/", "");
                 int id = Integer.parseInt(idStr);
 
-//                byte[] body = exchange.getRequestBody().readAllBytes();
-//                PacketReceiver packetReceiver = new PacketReceiver(body);
+                InputStream requestBody = exchange.getRequestBody();
+                byte[] message = extractMessageFromPackage(requestBody);
 
-                ProductGroup group = OBJECT_MAPPER.readValue(exchange.getRequestBody(), ProductGroup.class);
+                ProductGroup group = OBJECT_MAPPER.readValue(message, ProductGroup.class);
                 group.setId(id);
                 int resp = daoService.updateGroup(group);
                 exchange.getResponseHeaders().add("Content-Type", "application/json");
@@ -136,7 +152,7 @@ public class MyHttpServer extends Thread {
                 writeData("Product not found".getBytes(), 404, exchange, false);
             }
             try {
-                byte[] data = OBJECT_MAPPER.writeValueAsBytes(group);
+                byte[] data = writeMessageIntoPacket(OBJECT_MAPPER.writeValueAsBytes(group));
                 writeData(data, 200, exchange);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
@@ -145,7 +161,8 @@ public class MyHttpServer extends Thread {
 
         private void processCreateGroup(HttpExchange exchange) {
             try {
-                ProductGroup group = OBJECT_MAPPER.readValue(exchange.getRequestBody(), ProductGroup.class);
+                ProductGroup group = OBJECT_MAPPER
+                        .readValue(extractMessageFromPackage(exchange.getRequestBody()), ProductGroup.class);
                 int resp = daoService.createGroup(group.getName());
                 exchange.getResponseHeaders().add("Content-Type", "application/json");
                 exchange.sendResponseHeaders(resp != 0 ? 201 : 409, 0);
@@ -158,7 +175,7 @@ public class MyHttpServer extends Thread {
         private void processGetAllGroups(HttpExchange exchange) {
             List<ProductGroup> products = daoService.findAllGroups();
             try {
-                byte[] data = OBJECT_MAPPER.writeValueAsBytes(products);
+                byte[] data = writeMessageIntoPacket(OBJECT_MAPPER.writeValueAsBytes(products));
                 writeData(data, 200, exchange);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
@@ -189,13 +206,14 @@ public class MyHttpServer extends Thread {
 
         private void processLogin(HttpExchange exchange) {
             InputStream stream = exchange.getRequestBody();
+            byte[] body = extractMessageFromPackage(stream);
             try {
-                User user = OBJECT_MAPPER.readValue(stream, User.class);
+                User user = OBJECT_MAPPER.readValue(body, User.class);
                 String login = user.getLogin();
                 String passwordHash = user.getPassword();
                 if (daoService.userIsValid(login, passwordHash)) {
                     String jwt = JWT.createJWT(login);
-                    byte[] data = OBJECT_MAPPER.writeValueAsBytes(Map.of("token", jwt));
+                    byte[] data = writeMessageIntoPacket(OBJECT_MAPPER.writeValueAsBytes(Map.of("token", jwt)));
                     writeData(data, 200, exchange);
                 } else {
                     writeData("Error user not found".getBytes(), 401, exchange, false);
@@ -233,7 +251,8 @@ public class MyHttpServer extends Thread {
             List<Product> products = daoService.findAllProducts();
             try {
                 byte[] data = OBJECT_MAPPER.writeValueAsBytes(products);
-                writeData(data, 200, exchange);
+                byte[] packet = writeMessageIntoPacket(data);
+                writeData(packet, 200, exchange);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
             }
@@ -250,7 +269,8 @@ public class MyHttpServer extends Thread {
             }
             try {
                 byte[] data = OBJECT_MAPPER.writeValueAsBytes(product);
-                writeData(data, 200, exchange);
+                byte[] packet = writeMessageIntoPacket(data);
+                writeData(packet, 200, exchange);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
             }
@@ -258,7 +278,7 @@ public class MyHttpServer extends Thread {
 
         private void processCreateProduct(HttpExchange exchange) {
             try {
-                Product product = OBJECT_MAPPER.readValue(exchange.getRequestBody(), Product.class);
+                Product product = OBJECT_MAPPER.readValue(extractMessageFromPackage(exchange.getRequestBody()), Product.class);
                 int resp = daoService.createProduct(product);
                 exchange.getResponseHeaders().add("Content-Type", "application/json");
                 exchange.sendResponseHeaders(resp != 0 ? 201 : 409, 0);
@@ -274,7 +294,7 @@ public class MyHttpServer extends Thread {
                         .replace("/api/product/", "")
                         .replace("/", "");
                 int id = Integer.parseInt(idStr);
-                Product product = OBJECT_MAPPER.readValue(exchange.getRequestBody(), Product.class);
+                Product product = OBJECT_MAPPER.readValue(extractMessageFromPackage(exchange.getRequestBody()), Product.class);
                 product.setId(id);
                 int resp = daoService.updateProduct(product);
                 exchange.getResponseHeaders().add("Content-Type", "application/json");

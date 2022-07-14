@@ -1,5 +1,7 @@
 import anton.ukma.http.MyHttpServer;
 import anton.ukma.model.Product;
+import anton.ukma.packet.PacketCreator;
+import anton.ukma.packet.PacketReceiver;
 import anton.ukma.repository.DaoService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,11 +11,15 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
-import java.net.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.Map;
 
@@ -27,6 +33,22 @@ class MyHttpServerTest {
     private static String token;
 
     private static HttpClient client;
+
+    private static byte[] extractMessageFromPackage(byte[] body) {
+        try {
+            PacketReceiver packet = new PacketReceiver(body);
+            return packet.getMessageStrBytes();
+        } catch (InterruptedException | NoSuchPaddingException | NoSuchAlgorithmException |
+                 InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    private static byte[] writeMessageIntoPacket(byte[] message) {
+        PacketCreator pc = new PacketCreator(message);
+        return pc.getPacketBytes();
+    }
 
     @BeforeAll
     public static void init() throws IOException, SQLException {
@@ -50,12 +72,15 @@ class MyHttpServerTest {
     public void testLogin() throws URISyntaxException, IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("http://localhost:8765/login"))
-                .POST(HttpRequest.BodyPublishers.ofByteArray(OBJECT_MAPPER.writeValueAsBytes(Map.of(
-                        "login", "user",
-                        "password", "ee11cbb19052e40b07aac0ca060c23ee"))))
+                .POST(HttpRequest.BodyPublishers.ofByteArray(
+                        writeMessageIntoPacket(
+                                OBJECT_MAPPER.writeValueAsBytes(Map.of(
+                                        "login", "user",
+                                        "password", "ee11cbb19052e40b07aac0ca060c23ee")))))
                 .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        JsonNode jsonNode = OBJECT_MAPPER.readTree(response.body());
+        var response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        var body = extractMessageFromPackage(response.body());
+        JsonNode jsonNode = OBJECT_MAPPER.readTree(body);
         token = jsonNode.get("token").asText();
         assertNotNull(token);
         assertFalse(token.isEmpty());
@@ -69,15 +94,17 @@ class MyHttpServerTest {
                 .headers("token", token)
                 .GET()
                 .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        var response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        var body = new String(extractMessageFromPackage(response.body()));
+
 
         assertEquals(response.statusCode(), 200);
 
-        assertTrue(response.body().contains("{\"id\":1,\"name\":\"test1\""));
-        assertTrue(response.body().contains("{\"id\":2,\"name\":\"test2\""));
-        assertTrue(response.body().contains("{\"id\":3,\"name\":\"test3\""));
-        assertTrue(response.body().contains("{\"id\":4,\"name\":\"test4\""));
-        assertTrue(response.body().contains("{\"id\":5,\"name\":\"test5\""));
+        assertTrue(body.contains("{\"id\":1,\"name\":\"test1\""));
+        assertTrue(body.contains("{\"id\":2,\"name\":\"test2\""));
+        assertTrue(body.contains("{\"id\":3,\"name\":\"test3\""));
+        assertTrue(body.contains("{\"id\":4,\"name\":\"test4\""));
+        assertTrue(body.contains("{\"id\":5,\"name\":\"test5\""));
     }
 
     @Test
@@ -88,10 +115,12 @@ class MyHttpServerTest {
                 .GET()
                 .headers("token", token)
                 .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        var response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        byte[] body = extractMessageFromPackage(response.body());
+        String bodyStr = new String(body);
 
         assertEquals(response.statusCode(), 200);
-        assertTrue(response.body().contains("{\"id\":1,\"name\":\"test1\""));
+        assertTrue(bodyStr.contains("{\"id\":1,\"name\":\"test1\""));
     }
 
     @Test
@@ -105,8 +134,6 @@ class MyHttpServerTest {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         assertEquals(response.statusCode(), 404);
-
-
     }
 
     @Test
@@ -115,9 +142,10 @@ class MyHttpServerTest {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("http://localhost:8765/api/product/"))
                 .headers("token", token)
-                .PUT(HttpRequest.BodyPublishers.ofByteArray(OBJECT_MAPPER.writeValueAsBytes(new Product(
-                        "test_test", 25.25, 5, 1)
-                )))
+                .PUT(HttpRequest.BodyPublishers.ofByteArray(
+                        writeMessageIntoPacket(
+                                OBJECT_MAPPER.writeValueAsBytes(
+                                        new Product("test_test", 25.25, 5, 1)))))
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -149,9 +177,11 @@ class MyHttpServerTest {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("http://localhost:8765/api/product/1"))
                 .headers("token", token)
-                .POST(HttpRequest.BodyPublishers.ofByteArray(OBJECT_MAPPER.writeValueAsBytes(new Product(
-                        "newTest1", 2.2,5,1
-                ))))
+                .POST(HttpRequest.BodyPublishers.ofByteArray(
+                        writeMessageIntoPacket(
+                                OBJECT_MAPPER.writeValueAsBytes(new Product(
+                                        "newTest1", 2.2, 5, 1
+                                )))))
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
